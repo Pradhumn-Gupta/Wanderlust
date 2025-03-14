@@ -31,25 +31,25 @@ app.get("/", (req, res) => {
     res.send("Hi, I am root");
 });
 
-//Index Route
+// Index Route
 app.get("/listings", async (req, res) => {
     const allListings = await Listing.find({});
     res.render("listings/index.ejs", { allListings });
 });
 
-//New Route
+// New Route
 app.get("/listings/new", (req, res) => {
   res.render("listings/new.ejs");
 });
 
-//Show Route
+// Show Route
 app.get("/listings/:id", async (req, res) => {
     let { id } = req.params;
     const listing = await Listing.findById(id);
     res.render("listings/show.ejs", { listing });
 });
 
-//Create Route
+// Create Route
 app.post("/listings", async (req, res, next) => {
   try{
     const newListing = new Listing({
@@ -71,21 +71,21 @@ app.post("/listings", async (req, res, next) => {
   
 });
   
-//Edit Route
+// Edit Route
 app.get("/listings/:id/edit", async (req, res) => {
     let { id } = req.params;
     const listing = await Listing.findById(id);
     res.render("listings/edit.ejs", { listing });
 });
   
-//Update Route
+// Update Route
 app.put("/listings/:id", async (req, res) => {
     let { id } = req.params;
     await Listing.findByIdAndUpdate(id, { ...req.body.listing.title, ...req.body.listing.description, ...req.body.listing.image, ...req.body.listing.price, ...req.body.listing.location, ...req.body.listing.country });
     res.redirect(`/listings/${id}`);
 });
   
-//Delete Route
+// Delete Route
 app.delete("/listings/:id", async (req, res) => {
     let { id } = req.params;
     let deletedListing = await Listing.findByIdAndDelete(id);
@@ -93,24 +93,10 @@ app.delete("/listings/:id", async (req, res) => {
     res.redirect("/listings");
 });
 
-// app.get("/testListing", async (req, res) => {
-//   let sampleListing = new Listing({
-//      title: "My New Villa",
-//      description: "By the beach",
-//      price: 1200,
-//      location: "Calangute, Goa",
-//      country: "India",
-//     });
-
-//   await sampleListing.save();
-//   console.log("sample was saved");
-//   res.send("successful testing");
-// });
-
 app.use((err , req , res , next) => {
   res.send("Something went Wrong");
 })
 
 app.listen(8080, () => {
     console.log("server is listening to port 8080");
-  });
+});
