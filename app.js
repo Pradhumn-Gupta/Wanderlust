@@ -35,15 +35,21 @@ app.get("/", (req, res) => {
     res.send("Hi, I am root");
 });
 
-const validateReview = (req, res, next) => {
-  let {error} = reviewSchema.validate(req.body);
-  if (error) {
-    let errMsg = error.details.map((el) => el.message).join(",");
-    throw new ExpressError(400, errMsg);
-  }else{
-    next();
+const validateListings = (req, res, next) => {
+  console.log("Middleware Input:", req.body);
+  if (!req.body.review) {
+      return res.status(400).json({ error: "Input Fields are required" });
   }
+  next();
 }
+
+const validateReview = (req, res, next) => {
+  console.log("Middleware Input:", req.body);
+  if (!req.body.review) {
+      return res.status(400).json({ error: "Review is required" });
+  }
+  next();
+};
 
 // Index Route
 app.get("/listings", wrapAsync(async (req, res) => {
@@ -59,7 +65,7 @@ app.get("/listings/new", wrapAsync((req, res) => {
 // Show Route
 app.get("/listings/:id", wrapAsync(async (req, res) => {
     let { id } = req.params;
-    const listing = await Listing.findById(id);
+    const listing = await Listing.findById(id).populate("reviews");
     res.render("listings/show.ejs", { listing });
 }));
 
@@ -118,17 +124,30 @@ app.delete("/listings/:id", wrapAsync(async (req, res) => {
 }));
 
 //Reviews
-//Post Route
-app.post("/listings/:id/reviews", async (req, res) => {
-    let listing = await Listing.findById(req.params.id);
-    let newReview = new Review(req.body.review);
-    listing.reviews.push(newReview);
+//Post Review Route
+app.post("/listings/:id/reviews", validateReview, wrapAsync(async (req, res) => {
+  console.log("Request Body:", req.body); // Debugging Log
+  console.log("Review Data:", req.body.review);
+  let listing = await Listing.findById(req.params.id);
+  if (!req.body.review) {
+    return res.status(400).json({ error: "Review data is missing in request body" });
+  }
+  let newReview = new Review(req.body.review);
+  listing.reviews.push(newReview);
 
-    await newReview.save();
-    await listing.save();
+  await newReview.save();
+  await listing.save();
 
-    res.redirect(`/listings/${listing._id}`);
-});
+  res.redirect(`/listings/${listing._id}`);
+}));
+
+// Delete Review Route
+app.delete("/listings/:id/reviews/:reviewId", wrapAsync(async (req,res) => {
+  let {id, reviewId} = req.params;
+  await Listing.findByIdAndUpdate(id, {$pull: {reviews : reviewId}});
+  await Review.findByIdAndDelete(reviewId);
+  res.redirect(`/listings/${id}`);
+}));
 
 app.all("*", (req, res, next) => {
   next(new ExpressError(404, "Page Not Found"));
