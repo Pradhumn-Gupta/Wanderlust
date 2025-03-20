@@ -12,15 +12,13 @@ const validateReview = (req, res, next) => {
         return res.status(400).json({ error: "Review is required" });
     }
     next();
-  };
+};
 
 //Post Review Route
 router.post("/", validateReview, wrapAsync(async (req, res) => {
-    console.log("Request Body:", req.body); // Debugging Log
-    console.log("Review Data:", req.body.review);
     let listing = await Listing.findById(req.params.id);
-    if (!req.body.review) {
-      return res.status(400).json({ error: "Review data is missing in request body" });
+    if (!req.body.review || !req.body.review.rating || !req.body.review.comment) {
+      return res.status(400).json({ error: "Both rating and comment are required." });
     }
     let newReview = new Review(req.body.review);
     listing.reviews.push(newReview);

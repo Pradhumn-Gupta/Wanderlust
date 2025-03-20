@@ -5,9 +5,11 @@ const ExpressError = require("../utils/ExpressError.js");
 const { listingSchema, reviewSchema } = require("../schema.js");
 const Listing = require("../models/listing.js");
 
+router.use(express.urlencoded({ extended: true }));
+
 const validateListings = (req, res, next) => {
     console.log("Middleware Input:", req.body);
-    if (!req.body.review) {
+    if (!req.body.listing || Object.keys(req.body.listing).length === 0) {
         return res.status(400).json({ error: "Input Fields are required" });
     }
     next();
@@ -32,13 +34,13 @@ router.get("/:id", wrapAsync(async (req, res) => {
 }));
 
 // Create Route
-router.post("/", wrapAsync(async (req, res, next) => {
+router.post("/", validateListings, wrapAsync(async (req, res, next) => {
   const newListing = new Listing({
     title: req.body.listing.title,
     description: req.body.listing.description,
     image: {
-      filename: req.body.listing.image.filename || 'listingimage',
-      url: req.body.listing.image.url || 'https://images.unsplash.com/photo-1625505826533-5c80aca7d157?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fGdvYXxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=800&q=60'
+      filename: req.body.listing.image?.filename || 'listingimage',
+      url: req.body.listing.image?.url || 'https://images.unsplash.com/photo-1625505826533-5c80aca7d157?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fGdvYXxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=800&q=60'
     },
     price: req.body.listing.price,
     country: req.body.listing.country,
@@ -73,7 +75,14 @@ router.get("/:id/edit", wrapAsync(async (req, res) => {
 // Update Route
 router.put("/:id", wrapAsync(async (req, res) => {
   let { id } = req.params;
-  await Listing.findByIdAndUpdate(id, { $set: req.body.listing });
+  let updatedData = {
+    ...req.body.listing, // Spread other listing fields
+    image: {
+        filename: req.body.listing.image.filename, 
+        url: req.body.listing.image.url
+    }
+  };
+  await Listing.findByIdAndUpdate(id, { $set: updatedData }, { new: true, runValidators: true });
   res.redirect(`/listings/${id}`);
 }));
   
