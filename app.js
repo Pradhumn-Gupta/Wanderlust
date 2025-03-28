@@ -41,10 +41,10 @@ app.use(methodOverride("_method"));
 app.engine('ejs', engine);
 app.use(express.static(path.join(__dirname, '/public')));
 
-app.get("/", async (req, res) => {
-  const allListings = await Listing.find({});
-  res.render("listings/index.ejs", { allListings });
-});
+// app.get("/", async (req, res) => {
+//   const allListings = await Listing.find({});
+//   res.render("listings/index.ejs", { allListings });
+// });
 
 const sessionOptions = {
   secret : "mysupersecretcode",
